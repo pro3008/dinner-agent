@@ -116,22 +116,28 @@ TOOLS = [
 
 # ── Data persistence ──────────────────────────────────────
 
+EMPTY_DATA = {
+    "plan": {},
+    "pantry": [],
+    "preferences": {
+        "loved_meals": [],
+        "disliked_meals": [],
+        "notes": [],
+        "feedback_history": []
+    },
+    "conversations": {},
+    "last_generated": None
+}
+
 def load_data() -> dict:
     if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {
-        "plan": {},
-        "pantry": [],
-        "preferences": {
-            "loved_meals": [],
-            "disliked_meals": [],
-            "notes": [],
-            "feedback_history": []
-        },
-        "conversations": {},   # keyed by WhatsApp number
-        "last_generated": None
-    }
+        try:
+            with open(DATA_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, ValueError):
+            # File is corrupted — delete it and start fresh
+            os.remove(DATA_FILE)
+    return dict(EMPTY_DATA)
 
 
 def save_data(data: dict) -> None:
