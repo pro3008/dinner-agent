@@ -319,6 +319,29 @@ def format_shopping_whatsapp(shopping: dict) -> str:
     return "\n".join(lines)
 
 
+# ── Helper: make Claude response blocks JSON-safe ─────────
+
+def serialize_content(content):
+    """Convert Anthropic SDK objects to plain dicts so they can be saved to JSON."""
+    if not isinstance(content, list):
+        return content
+    result = []
+    for block in content:
+        if hasattr(block, "type"):
+            if block.type == "text":
+                result.append({"type": "text", "text": block.text})
+            elif block.type == "tool_use":
+                result.append({
+                    "type": "tool_use",
+                    "id": block.id,
+                    "name": block.name,
+                    "input": block.input
+                })
+        else:
+            result.append(block)
+    return result
+
+
 # ── Main chat function ────────────────────────────────────
 
 def chat(user_message: str, sender_number: str, data: dict) -> str:
@@ -454,7 +477,7 @@ Rules:
                     "content": tool_result
                 })
 
-        history.append({"role": "assistant", "content": response.content})
+        history.append({"role": "assistant", "content": serialize_content(response.content)})
         history.append({"role": "user", "content": tool_results})
 
         response = client.messages.create(
